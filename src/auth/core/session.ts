@@ -1,8 +1,6 @@
 import { userRoles } from "@/drizzle/schema"
 import { redisClient } from "@/redis/redis"
-import crypto from "crypto"
 import { z } from "zod"
-
 // Seven days in seconds
 const SESSION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7
 const COOKIE_SESSION_KEY = "session-id"
@@ -48,7 +46,10 @@ export async function createUserSession(
   user: UserSession,
   cookies: Pick<Cookies, "set">
 ) {
-  const sessionId = crypto.randomBytes(512).toString("hex").normalize()
+  // const sessionId = crypto.randomBytes(512).toString("hex").normalize()
+  const randomBytesArray = new Uint8Array(64); // 64 bytes = 512 bits
+  crypto.getRandomValues(randomBytesArray); // Uses global Web Crypto API
+  const sessionId = Array.from(randomBytesArray).map(b => b.toString(16).padStart(2, '0')).join('');
 
   // the zod parser ensures that no other properties will be part of the session
   // redis will automatically delete the session after the expiration time
@@ -80,6 +81,21 @@ export async function updateUserSessionData(
   await redisClient.set(`session:${sessionId}`, sessionSchema.parse(user), {
     ex: SESSION_EXPIRATION_SECONDS,
   })
+}
+
+export async function updateUserSessionExpiration(
+  cookies: Pick<Cookies, "get" | "set">
+) {
+  const sessionId = cookies.get(COOKIE_SESSION_KEY)?.value
+  if (sessionId == null) return null
+
+  const user = await getUserSessionById(sessionId)
+  if (user == null) return
+
+  await redisClient.set(`session:${sessionId}`, user, {
+    ex: SESSION_EXPIRATION_SECONDS,
+  })
+  setCookie(sessionId, cookies)
 }
 
 
