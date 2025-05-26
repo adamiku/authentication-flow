@@ -80,7 +80,7 @@ export async function logOut() {
 }
 
 export async function oAuthSignIn() {
-  const url = new OAuthClient().createAuthUrl()
+  const url = new OAuthClient().createAuthUrl(await cookies())
   redirect(url)
 }
  
