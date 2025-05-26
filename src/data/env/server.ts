@@ -3,10 +3,7 @@ import { z } from "zod"
 
 export const env = createEnv({
   server: {
-    DB_PASSWORD: z.string().min(1),
-    DB_USER: z.string().min(1),
-    DB_NAME: z.string().min(1),
-    DB_HOST: z.string().min(1),
+    DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().min(1),
     REDIS_TOKEN: z.string().min(1),
     OAUTH_REDIRECT_URL_BASE: z.string().min(1),
