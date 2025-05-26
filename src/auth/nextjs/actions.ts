@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { z } from "zod"
+import { OAuthClient } from "../core/oauth/base"
 import {
   comparePasswords,
   generateSalt,
@@ -77,3 +78,9 @@ export async function logOut() {
   await removeUserFromSession(await cookies())
   redirect("/")
 }
+
+export async function oAuthSignIn() {
+  const url = new OAuthClient().createAuthUrl()
+  redirect(url)
+}
+ 

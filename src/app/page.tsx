@@ -11,7 +11,7 @@ import {
 import Link from "next/link"
 
 export default async function HomePage() {
-  const fullUser = await getCurrentUser({ withFullUser: true })
+  const fullUser = await getCurrentUser({ withFullUser: true, redirectIfNotFound: true })
 
   return (
     <div className="container mx-auto p-4">
