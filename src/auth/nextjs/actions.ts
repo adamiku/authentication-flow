@@ -3,12 +3,14 @@
 import { db } from "@/drizzle/db"
 import { UserTable } from "@/drizzle/schema"
 import { eq } from "drizzle-orm"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 import {
   generateSalt,
   hashPassword
 } from "../core/passwordHasher"
+import { createUserSession } from "../core/session"
 import { signUpSchema } from "./schemas"
 
 export async function signUp(unsafeData: z.infer<typeof signUpSchema>) {
@@ -37,6 +39,7 @@ export async function signUp(unsafeData: z.infer<typeof signUpSchema>) {
       .returning({ id: UserTable.id, role: UserTable.role })
 
     if (user == null) return "Unable to create account"
+    await createUserSession(user, await cookies())
   } catch {
     return "Unable to create account"
   }

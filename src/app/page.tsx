@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/auth/nextjs/currentUser"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -9,7 +10,7 @@ import {
 import Link from "next/link"
 
 export default async function HomePage() {
-  const fullUser = { name: "John Doe", role: "admin" }
+  const fullUser = await getCurrentUser()
 
   return (
     <div className="container mx-auto p-4">
@@ -25,7 +26,7 @@ export default async function HomePage() {
       ) : (
         <Card className="max-w-[500px] mt-4">
           <CardHeader>
-            <CardTitle>User: {fullUser.name}</CardTitle>
+            <CardTitle>User: {fullUser.id}</CardTitle>
             <CardDescription>Role: {fullUser.role}</CardDescription>
           </CardHeader>
           <CardFooter className="flex gap-4">
