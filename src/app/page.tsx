@@ -1,3 +1,4 @@
+import { LogOutButton } from "@/auth/nextjs/components/LogOutButton"
 import { getCurrentUser } from "@/auth/nextjs/currentUser"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,7 +39,7 @@ export default async function HomePage() {
                 <Link href="/admin">Admin Page</Link>
               </Button>
             )}
-            {/* <LogOutButton /> */}
+            <LogOutButton />
           </CardFooter>
         </Card>
       )}
