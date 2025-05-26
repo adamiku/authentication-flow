@@ -13,3 +13,18 @@ export function hashPassword(password: string, salt: string): Promise<string> {
 export function generateSalt() {
   return crypto.randomBytes(16).toString("hex").normalize()
 }
+
+export async function comparePasswords({
+  hashedPassword,
+  salt,
+  password
+}: {
+  hashedPassword: string
+  salt: string
+  password: string
+}): Promise<boolean> {
+  const inputHashedPassword = await hashPassword(password, salt)
+
+  // timing safe version, take the same amount of time to prevent timing attack
+  return crypto.timingSafeEqual(Buffer.from(hashedPassword), Buffer.from(inputHashedPassword))
+}

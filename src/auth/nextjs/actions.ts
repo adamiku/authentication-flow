@@ -7,11 +7,37 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 import {
+  comparePasswords,
   generateSalt,
   hashPassword
 } from "../core/passwordHasher"
 import { createUserSession } from "../core/session"
-import { signUpSchema } from "./schemas"
+import { signInSchema, signUpSchema } from "./schemas"
+
+export async function signIn(unsafeData: z.infer<typeof signInSchema>) {
+  const { success, data } = signInSchema.safeParse(unsafeData)
+
+  if (!success) return "Unable to sign in"
+  
+  const user = await db.query.UserTable.findFirst({
+    columns: {password: true, salt: true, id: true, email: true, role: true},
+    where: eq(UserTable.email, data.email),
+  })
+
+  if (user == null || user.password == null || user.salt == null) return "Unable to sign in"
+  
+  const isPasswordValid = await comparePasswords({
+    hashedPassword: user.password,
+    salt: user.salt,
+    password: data.password
+  })
+
+  if (!isPasswordValid) return "Unable to sign in"
+
+  await createUserSession(user, await cookies())
+
+  redirect("/")
+}
 
 export async function signUp(unsafeData: z.infer<typeof signUpSchema>) {
   const { success, data } = signUpSchema.safeParse(unsafeData)
