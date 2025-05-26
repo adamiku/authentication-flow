@@ -14,8 +14,9 @@ import Link from "next/link"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { oAuthSignIn, signIn } from "../actions"
+import { signIn } from "../actions"
 import { signInSchema } from "../schemas"
+import { OAuthButtons } from "./OAuthButtons"
 
 export function SignInForm() {
   const [error, setError] = useState<string>()
@@ -35,14 +36,7 @@ export function SignInForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {error && <p className="text-destructive">{error}</p>}
-        <div className="flex gap-4">
-          <Button
-            type="button"
-            onClick={async () => await oAuthSignIn("discord")}
-          >
-            Discord
-          </Button>
-        </div>
+        <OAuthButtons />
         <FormField
           control={form.control}
           name="email"

@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { Cookies } from "../session";
 import { createDiscordOAuthClient } from "./discord";
+import { createGitHubOAuthClient } from "./github";
 
 const STATE_COOKIE_KEY = "oAuthState"
 const CODE_VERIFIER_COOKIE_KEY = "oAuthCodeVerifier"
@@ -130,9 +131,11 @@ export function getOAuthClient(provider: OAuthProvider) {
     switch (provider) {
         case "discord":
             return createDiscordOAuthClient()
+        case "github":
+            return createGitHubOAuthClient()
+        default:
+            throw new Error("Invalid provider")
     }
-
-    throw new Error("Invalid provider")
 }
 
 class InvalidTokenError extends Error {
