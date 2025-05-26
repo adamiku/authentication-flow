@@ -38,7 +38,7 @@ export function SignInForm() {
         <div className="flex gap-4">
           <Button
             type="button"
-            onClick={async () => await oAuthSignIn()}
+            onClick={async () => await oAuthSignIn("discord")}
           >
             Discord
           </Button>

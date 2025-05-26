@@ -1,31 +1,69 @@
 import { env } from "@/data/env/server";
+import { OAuthProvider } from "@/drizzle/schema";
 import crypto from "crypto";
 import { z } from "zod";
 import { Cookies } from "../session";
+import { createDiscordOAuthClient } from "./discord";
 
 const STATE_COOKIE_KEY = "oAuthState"
 const CODE_VERIFIER_COOKIE_KEY = "oAuthCodeVerifier"
 const COOKIE_EXPIRATION_SECONDS = 60 * 10
 
-export class OAuthClient {
+export class OAuthClient<T> {
+    private readonly provider: OAuthProvider
+    private readonly clientId: string
+    private readonly clientSecret: string
+    private readonly scopes: string[]
+    private readonly urls: {
+      auth: string
+      token: string
+      user: string
+    }
+    private readonly userInfo: {
+      schema: z.ZodSchema<T>
+      parser: (data: T) => { id: string; email: string; name: string }
+    }
     private readonly tokenSchema = z.object({
-        access_token: z.string(),
-        token_type: z.string(),
+      access_token: z.string(),
+      token_type: z.string(),
     })
-
-    private readonly userSchema = z.object({
-        id: z.string(),
-        global_name: z.string().optional(),
-        username: z.string(),
-        email: z.string(),
-    })
+  
+    constructor({
+      provider,
+      clientId,
+      clientSecret,
+      scopes,
+      urls,
+      userInfo,
+    }: {
+      provider: OAuthProvider
+      clientId: string
+      clientSecret: string
+      scopes: string[]
+      urls: {
+        auth: string
+        token: string
+        user: string
+      }
+      userInfo: {
+        schema: z.ZodSchema<T>
+        parser: (data: T) => { id: string; email: string; name: string }
+      }
+    }) {
+      this.provider = provider
+      this.clientId = clientId
+      this.clientSecret = clientSecret
+      this.scopes = scopes
+      this.urls = urls
+      this.userInfo = userInfo
+    }
 
     private get redirectUrl() {
-        return new URL('discord', env.OAUTH_REDIRECT_URL_BASE)
+        return new URL(this.provider, env.OAUTH_REDIRECT_URL_BASE)
     }
 
     private async fetchToken(code: string, codeVerifier: string) {
-        const response = await fetch("https://discord.com/api/oauth2/token", {
+        const response = await fetch(this.urls.token, {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -35,8 +73,8 @@ export class OAuthClient {
                 code,
                 redirect_uri: this.redirectUrl.toString(),
                 grant_type: "authorization_code",
-                client_id: env.DISCORD_CLIENT_ID,
-                client_secret: env.DISCORD_CLIENT_SECRET,
+                client_id: this.clientId,
+                client_secret: this.clientSecret,
                 code_verifier: codeVerifier,
             }),
         })
@@ -57,32 +95,29 @@ export class OAuthClient {
         
         const {accessToken, tokenType} = await this.fetchToken(code, getCodeVerifier(cookies))
         
-        const response = await fetch("https://discord.com/api/users/@me", {
+        const userResponse = await fetch(this.urls.user, {
             headers: {
                 Authorization: `${tokenType} ${accessToken}`,
             },
         })
-        const rawData = await response.json()
-        const {data,success,error} = this.userSchema.safeParse(rawData)
+        const rawData = await userResponse.json()
+
+        const {data: user, success, error} = this.userInfo.schema.safeParse(rawData)
         
         if (!success) throw new InvalidUserError(error)
 
-        return {
-            id: data.id,
-            email: data.email,
-            name: data.global_name ?? data.username,
-        }
+        return this.userInfo.parser(user)
     }
 
     createAuthUrl(cookies: Pick<Cookies, "set">): string {
         const state = createState(cookies)
         const codeVerifier = createCodeVerifier(cookies)
-        const url = new URL('https://discord.com/oauth2/authorize')
+        const url = new URL(this.urls.auth)
 
-        url.searchParams.set('client_id', env.DISCORD_CLIENT_ID)
+        url.searchParams.set('client_id', this.clientId)
         url.searchParams.set('redirect_uri', this.redirectUrl.toString())
         url.searchParams.set('response_type', 'code')
-        url.searchParams.set('scope', 'identify email')
+        url.searchParams.set('scope', this.scopes.join(" "))
         url.searchParams.set('state', state)
         url.searchParams.set('code_challenge', crypto.hash("sha256", codeVerifier, "base64url"))
         url.searchParams.set('code_challenge_method', 'S256')
@@ -91,27 +126,36 @@ export class OAuthClient {
     }
 }
 
-export class InvalidTokenError extends Error {
+export function getOAuthClient(provider: OAuthProvider) {
+    switch (provider) {
+        case "discord":
+            return createDiscordOAuthClient()
+    }
+
+    throw new Error("Invalid provider")
+}
+
+class InvalidTokenError extends Error {
     constructor(zodError: z.ZodError) {
         super('Invalid Token')
         this.cause = zodError
     }
 }
 
-export class InvalidUserError extends Error {
+class InvalidUserError extends Error {
     constructor(zodError: z.ZodError) {
         super('Invalid User')
         this.cause = zodError
     }
 }
 
-export class InvalidStateError extends Error {
+class InvalidStateError extends Error {
     constructor() {
         super('Invalid State')
     }
 }
 
-export class InvalidCodeVerifierError extends Error {
+class InvalidCodeVerifierError extends Error {
     constructor() {
         super('Invalid Code Verifier')
     }

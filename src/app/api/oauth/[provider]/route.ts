@@ -1,4 +1,4 @@
-import { OAuthClient } from "@/auth/core/oauth/base";
+import { getOAuthClient } from "@/auth/core/oauth/base";
 import { createUserSession } from "@/auth/core/session";
 import { db } from "@/drizzle/db";
 import { OAuthProvider, oAuthProviders, UserOAuthAccountTable, UserTable } from "@/drizzle/schema";
@@ -25,8 +25,10 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{prov
         redirect(`/sign-in?oauthError=${encodeURIComponent("Failed to connect. Please try again")}`)
     }
 
+    const oAuthClient = getOAuthClient(provider)
+
     try {
-        const oAuthUser = await new OAuthClient().fetchUser(code, state, await cookies())
+        const oAuthUser = await oAuthClient.fetchUser(code, state, await cookies())
         const user = await connectUserToAccount(oAuthUser, provider)
         await createUserSession(user, await cookies())
     } catch (error) {
