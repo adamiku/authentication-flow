@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{prov
     redirect("/")
 }
 
-function connectUserToAccount({id,email,name}: {id: string, email: string, name: string}, provider: OAuthProvider) {
+async function connectUserToAccount({id,email,name}: {id: string, email: string, name: string}, provider: OAuthProvider) {
     return db.transaction(async trx => {
         let user = await trx.query.UserTable.findFirst({
             where: eq(UserTable.email, email),

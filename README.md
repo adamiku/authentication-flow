@@ -1,36 +1,175 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Authentication Flow
+
+A modern, secure authentication system built with Next.js and TypeScript, featuring both traditional password-based authentication and OAuth integration with multiple providers.
+
+## Features
+
+- 🔐 **Multiple Authentication Methods**
+
+  - Email/Password authentication with secure password hashing
+  - OAuth integration with Discord and GitHub
+  - Role-based access control (user/admin roles)
+
+- 🛡️ **Security-First Approach**
+
+  - Secure session management
+  - PKCE flow for OAuth
+  - Protection against CSRF attacks
+  - HTTP-only cookies
+
+- 🏗️ **Modern Architecture**
+
+  - Type-safe database operations with Drizzle ORM
+  - Database schema migrations
+  - Next.js App Router with server components
+  - Fully TypeScript implementation
+
+- 🎨 **UI Components**
+  - Responsive design with Tailwind CSS
+  - Radix UI primitives for accessible components
+  - Custom form handling with React Hook Form
+
+## Tech Stack
+
+### Frontend
+
+- **Next.js 15** - React framework with server components
+- **React 19** - UI library
+- **TypeScript** - Type safety throughout the codebase
+- **Tailwind CSS** - Utility-first CSS framework
+- **Radix UI** - Unstyled, accessible UI components
+- **React Hook Form** - Form validation and handling
+
+### Backend
+
+- **Next.js API Routes** - Server-side functionality
+- **Drizzle ORM** - Type-safe database queries
+- **Zod** - Schema validation for type safety
+- **Supabase PostgreSQL** - Managed Postgres database service
+
+### Authentication
+
+- **Custom Auth System** - Built from scratch for complete control
+- **OAuth 2.0 with PKCE** - For Discord and GitHub integration
+- **Upstash Redis** - For session management
+
+### Development Tools
+
+- **ESLint** - Code linting
+- **Drizzle Kit** - Database schema migrations
+- **Turbopack** - Fast development builds
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+
+- npm or yarn
+- A Supabase PostgreSQL database
+- Upstash Redis instance
+- OAuth app credentials (for Discord and GitHub)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   git clone https://github.com/yourusername/authentication-flow.git
+   cd authentication-flow
+   ```
 
-## Learn More
+2. Install dependencies
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Set up environment variables
+   Create a `.env` file based on `.env.example`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```
+   # Redis
+   REDIS_URL=your-redis-url
+   REDIS_TOKEN=your-redis-token
 
-## Deploy on Vercel
+   # Database
+   DATABASE_URL=your-supabase-postgres-connection-string
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   # OAuth
+   OAUTH_REDIRECT_URL_BASE=http://localhost:3000/api/oauth/
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   # Discord
+   DISCORD_CLIENT_ID=your-discord-client-id
+   DISCORD_CLIENT_SECRET=your-discord-client-secret
+
+   # GitHub
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
+   ```
+
+4. Run database migrations
+
+   ```bash
+   npm run db:migrate
+   ```
+
+5. Start the development server
+   ```bash
+   npm run dev
+   ```
+
+## Database Schema
+
+The application uses a PostgreSQL database with the following main tables:
+
+- `users` - Stores user information including roles
+- `user_oauth_accounts` - Links users to their OAuth provider accounts
+
+## Authentication Flows
+
+### Password-based Authentication
+
+1. User registers with email, name, and password
+2. Password is securely hashed and stored
+3. On login, password is verified against stored hash
+4. Session is created and stored in Redis
+
+### OAuth Authentication
+
+1. User initiates OAuth login with a provider (Discord/GitHub)
+2. PKCE flow is used for added security
+3. After successful authorization, provider data is retrieved
+4. User is either created or linked with existing account
+5. Session is created and stored in Redis
+
+## Deployment
+
+### Production Database
+
+The project uses Supabase PostgreSQL for production, which offers:
+
+- Managed PostgreSQL service
+- Row-level security features
+- Built-in connection pooling
+- Comprehensive dashboard for database management
+
+### Vercel Deployment
+
+1. Connect your GitHub repository to Vercel
+2. Configure environment variables in the Vercel dashboard
+3. Deploy with the following settings:
+   - Framework preset: Next.js
+   - Build command: `npm run build`
+   - Output directory: `.next`
+
+### Environment Variables
+
+Ensure all required environment variables are set in your production environment.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
